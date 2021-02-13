@@ -1,6 +1,7 @@
 import express from "express"
 import "express-async-errors" // so that we can use `throw` in async functions rather than `next()` for errors
 import mongoose from "mongoose"
+import cookieSession from "cookie-session"
 
 import { currentUserRouter }  from "./routes/current-user"
 import { loginRouter }  from "./routes/login"
@@ -11,7 +12,12 @@ import { errorHandler } from "./middleware/error-handler"
 import { NotFoundError } from "./errors/not-found-error"
 
 const app = express()
+app.set("trust proxy", true)
 app.use(express.json())
+app.use(cookieSession({
+  signed: false, // disable encryption because JWT is already encrypted
+  secure: true, // needs to be https
+}))
 
 app.use(currentUserRouter)
 app.use(loginRouter)
@@ -25,6 +31,10 @@ app.all('*', async () => {
 app.use(errorHandler)
 
 const start = async () => {
+  if (!process.env.JWT_KEY) {
+    throw new Error("JWT_KEY not defined")
+  }
+
   try {
     await mongoose.connect("mongodb://auth-mongo-srv:27017/auth" , {
       useNewUrlParser: true,
