@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: auth
-          image: mattfan00/ticketing/auth
+          image: mattfan00/ticketing-auth
           env:
             - name: JWT_KEY
               valueFrom:
