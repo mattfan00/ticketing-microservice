@@ -7,8 +7,7 @@ import { loginRouter }  from "./routes/login"
 import { logoutRouter }  from "./routes/logout"
 import { registerRouter }  from "./routes/register"
 
-import { errorHandler } from "./middleware/error-handler"
-import { NotFoundError } from "./errors/not-found-error"
+import { errorHandler, NotFoundError } from "@mattfan00-ticketing/common"
 
 const app = express()
 app.set("trust proxy", true)
