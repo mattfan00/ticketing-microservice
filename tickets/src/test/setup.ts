@@ -16,6 +16,9 @@ declare global {
   }
 }
 
+// If anything tries to import this file, redirect it to the mocked file
+jest.mock("../nats-wrapper")
+
 let mongo: any
 // Before all tests startup, set up temporary mongo server
 beforeAll(async () => {
@@ -32,6 +35,8 @@ beforeAll(async () => {
 
 // Before each test starts, delete all the data in mongo
 beforeEach(async () => {
+  jest.clearAllMocks()
+
   const collections = await mongoose.connection.db.collections()
 
   for (let collection of collections) {
