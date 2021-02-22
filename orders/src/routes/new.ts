@@ -10,6 +10,9 @@ import {
 import Order, { OrderStatus } from "../models/order"
 import Ticket from "../models/ticket"
 
+import { natsWrapper } from "../nats-wrapper"
+import { OrderCreatedPublisher } from "../events/publishers/order-created-publisher"
+
 const router = express.Router()
 
 const EXPIRATION_WINDOW_SECONDS = 15 * 60
@@ -38,7 +41,7 @@ router.post("/api/orders", requireAuth, [
   expiration.setSeconds(expiration.getSeconds() + EXPIRATION_WINDOW_SECONDS)
 
   // Build the order and save it to the database
-  const createdOrder = Order.create({
+  const createdOrder = await Order.create({
     userId: req.currentUser!.id,
     status: OrderStatus.Created,
     expiresAt: expiration,
@@ -46,6 +49,16 @@ router.post("/api/orders", requireAuth, [
   })
 
   // Publish an event saying that an order was created
+  new OrderCreatedPublisher(natsWrapper.client).publish({
+    id: createdOrder.id,
+    status: createdOrder.status,
+    userId: createdOrder.id,
+    expiresAt: createdOrder.expiresAt.toISOString(),
+    ticket: {
+      id: foundTicket.id,
+      price: foundTicket.price
+    }
+  })
 
   res.json(createdOrder)
 })

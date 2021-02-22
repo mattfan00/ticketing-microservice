@@ -4,6 +4,8 @@ import mongoose from "mongoose"
 import Ticket from "../../models/ticket"
 import Order, { OrderStatus } from "../../models/order"
 
+import { natsWrapper } from "../../nats-wrapper"
+
 const route = "/api/orders"
 
 it("requires users to be authenticated to create an order", async () => {
@@ -88,4 +90,20 @@ it("successfully creates the order", async () => {
     .expect(200)
 })
 
-it.todo("emits an order created event")
+it("emits an order created event", async () => {
+  const newTicket = await Ticket.create({
+    title: "my ticket",
+    price: 10,
+  })
+
+  const { cookie } = global.register()
+  await request(app)
+    .post(route)
+    .set("Cookie", cookie)
+    .send({
+      ticketId: newTicket.id
+    })
+    .expect(200)
+
+  expect(natsWrapper.client.publish).toHaveBeenCalled()
+})

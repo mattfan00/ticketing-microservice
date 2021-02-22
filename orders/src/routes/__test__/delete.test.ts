@@ -4,6 +4,7 @@ import mongoose from "mongoose"
 
 import Ticket from "../../models/ticket"
 import Order, { OrderStatus } from "../../models/order"
+import { natsWrapper } from "../../nats-wrapper"
 
 const route = "/api/orders"
 
@@ -68,4 +69,25 @@ it("successfully cancels the order", async () => {
   expect(cancelledOrder!.status).toBe(OrderStatus.Cancelled)
 })
 
-it.todo("emits an order cancelled event")
+it("emits an order cancelled event", async () => {
+  const { currentUser, cookie } = global.register()
+
+  const newTicket = await Ticket.create({
+    title: "my ticket",
+    price: 10
+  })
+
+  const newOrder = await Order.create({
+    userId: currentUser.id,
+    status: OrderStatus.Created,
+    ticket: newTicket.id
+  })
+
+  await request(app)
+    .delete(`${route}/${newOrder.id}`)
+    .set("Cookie", cookie)
+    .send({})
+    .expect(200)
+
+  expect(natsWrapper.client.publish).toHaveBeenCalled()
+})
