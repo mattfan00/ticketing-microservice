@@ -87,6 +87,30 @@ it("returns a 400 if the user provides invalid fields", async () => {
 
 })
 
+it("returns a 400 if trying to edit a reserved ticket", async () => {
+  const { currentUser, cookie } = global.register()
+  const newTicket = await Ticket.create({
+    title: "my ticket",
+    price: 10,
+    userId: currentUser.id
+  })
+  newTicket.set({
+    orderId: new mongoose.Types.ObjectId().toHexString()
+  })
+  await newTicket.save()
+
+  const updatedTicket = {
+    title: "my updated ticket",
+    price: 100
+  }
+
+  await request(app)
+    .put(`/api/tickets/${newTicket.id}`)
+    .set("Cookie", cookie)
+    .send(updatedTicket)
+    .expect(400)
+})
+
 it("updates the ticket if everything is correct", async () => {
   const { currentUser, cookie } = global.register()
   const newTicket = await Ticket.create({

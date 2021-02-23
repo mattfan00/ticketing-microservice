@@ -1,13 +1,15 @@
 import mongoose, { Document } from "mongoose"
 import { OrderStatus } from "@mattfan00-ticketing/common"
 import { TicketInterface } from "./ticket"
+import { updateIfCurrentPlugin } from "mongoose-update-if-current"
 
 export { OrderStatus }
 
 export interface OrderInterface extends Document {
-  userId: string,
-  status: OrderStatus,
-  expiresAt: Date,
+  userId: string
+  status: OrderStatus
+  expiresAt: Date
+  version: number
   ticket: TicketInterface
 }
 
@@ -37,5 +39,8 @@ const orderSchema = new mongoose.Schema({
     }
   }
 })
+
+orderSchema.set("versionKey", "version")
+orderSchema.plugin(updateIfCurrentPlugin)
 
 export default mongoose.model<OrderInterface>("Order", orderSchema)

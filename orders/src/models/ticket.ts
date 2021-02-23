@@ -1,10 +1,16 @@
-import mongoose, { Document } from "mongoose"
+import mongoose, { Document, Model } from "mongoose"
 import Order, { OrderStatus } from "../models/order"
+import { updateIfCurrentPlugin } from "mongoose-update-if-current"
 
 export interface TicketInterface extends Document {
-  title: string,
-  price: number,
+  title: string
+  price: number
+  version: number
   isReserved(): Promise<boolean>
+}
+
+interface TicketModelInterface extends Model<TicketInterface> {
+  findByEvent(event: { id: string, version: number}): Promise<TicketInterface | null>
 }
 
 const ticketSchema =  new mongoose.Schema({
@@ -13,7 +19,7 @@ const ticketSchema =  new mongoose.Schema({
     required: true
   },
   price: {
-    type: String,
+    type: Number,
     required: true,
     min: 0
   }
@@ -25,6 +31,14 @@ const ticketSchema =  new mongoose.Schema({
     }
   }
 })
+
+ticketSchema.statics.findByEvent = function (event: { id: string, version: number}) {
+    return this.findOne({
+      _id: event.id,
+      // solve concurrency issues
+      version: event.version - 1
+    })
+}
 
 ticketSchema.methods.isReserved = async function() {
   const foundOrder = await Order.findOne({
@@ -41,4 +55,7 @@ ticketSchema.methods.isReserved = async function() {
   return foundOrder ? true: false
 }
 
-export default mongoose.model<TicketInterface>("Ticket", ticketSchema)
+ticketSchema.set("versionKey", "version")
+ticketSchema.plugin(updateIfCurrentPlugin)
+
+export default mongoose.model<TicketInterface, TicketModelInterface>("Ticket", ticketSchema)

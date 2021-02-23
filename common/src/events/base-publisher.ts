@@ -9,7 +9,7 @@ interface Event {
 export abstract class Publisher<T extends Event> {
   abstract subject: T['subject']
 
-  constructor(private client: Stan) {
+  constructor(protected client: Stan) {
     this.client = client
   }
 
@@ -19,7 +19,7 @@ export abstract class Publisher<T extends Event> {
         if (err) {
           return reject(err)
         }
-        console.log("event published")
+        console.log("Event published:", this.subject)
         resolve()
       })
     })

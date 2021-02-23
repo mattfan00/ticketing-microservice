@@ -7,6 +7,7 @@ import { natsWrapper } from "../nats-wrapper"
 import {
   NotAuthorizedError,
   NotFoundError,
+  BadRequestError,
   requireAuth,
   validateRequest
 } from "@mattfan00-ticketing/common"
@@ -27,6 +28,10 @@ router.put("/api/tickets/:id", [
     throw new NotAuthorizedError()
   }
 
+  if (foundTicket.orderId) {
+    throw new BadRequestError("Cannot edit a reserved ticket")
+  }
+
   const { title, price } = req.body
   foundTicket.set({ title, price })
   const updatedTicket = await foundTicket.save()
@@ -35,7 +40,8 @@ router.put("/api/tickets/:id", [
     id: updatedTicket.id,
     title: updatedTicket.title,
     price: updatedTicket.price,
-    userId: updatedTicket.userId
+    userId: updatedTicket.userId,
+    version: updatedTicket.version
   })
 
 
